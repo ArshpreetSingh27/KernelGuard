@@ -1,0 +1,10 @@
+{
+  "manifest_version": 2,
+  "name": "KernelGuard Sent Mail Activity",
+  "version": "1.0.7",
+  "description": "Send recipient domains of successfully sent messages to the local KernelGuard receiver.",
+  "browser_specific_settings": {"gecko": {"id": "sent-mail@kernelguard.local", "strict_min_version": "115.0"}},
+  "permissions": ["compose", "storage", "http://127.0.0.1:5003/*"],
+  "background": {"scripts": ["background.js"]},
+  "options_ui": {"page": "options.html", "open_in_tab": true}
+}

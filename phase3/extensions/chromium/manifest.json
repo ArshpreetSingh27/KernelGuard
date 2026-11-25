@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "KernelGuard Web Activity",
+  "version": "1.0.0",
+  "description": "Send visited web addresses to the local KernelGuard receiver.",
+  "permissions": ["history", "storage"],
+  "host_permissions": ["http://127.0.0.1:5003/*"],
+  "background": {"service_worker": "background.js"},
+  "options_page": "options.html"
+}

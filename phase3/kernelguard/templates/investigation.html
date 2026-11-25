@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<a class="back" href="{{ url_for('dashboard') }}#activity">← Activity</a>
+<header class="page-header"><div><div class="eyebrow">INVESTIGATION / EVENT #{{ seed.id }}</div>
+  <h1>Activity around this event</h1>
+  <p>{{ seed.host }} · {{ seed.timestamp|utc }} · {{ seed.kind|replace('_', ' ') }} · {{ seed.resource or 'No resource recorded' }}</p>
+</div></header>
+<div class="notice">Events within ±{{ minutes }} minutes · Identity matches and host context are labelled separately.</div>
+<p>Window:
+  {% for option in (15, 60, 240) %}<a {% if option == minutes %}aria-current="page"{% endif %} href="{{ url_for('investigate', event_id=seed.id, minutes=option) }}">{{ option }} min</a> {% endfor %}
+</p>
+{% if truncated %}<p class="notice">Showing the 500 events closest to the selected event. Narrow the time window to see more.</p>{% endif %}
+<div class="table-wrap"><table><thead><tr><th>Time (UTC)</th><th>Evidence link</th><th>Activity</th><th>Account / session</th><th>Outcome</th></tr></thead><tbody>
+{% for row in rows %}<tr>
+  <td class="time">{{ row.timestamp|utc }}</td>
+  <td>{{ row.relation }}</td>
+  <td>{% if row.kind == 'session_observed' %}{{ row.kind|replace('_', ' ') }}{% else %}<a href="{{ url_for('investigate', event_id=row.id, minutes=minutes) }}">{{ row.kind|replace('_', ' ') }}</a>{% endif %}<small>{{ row.resource or '—' }}</small>{% if row.executable %}<small>{{ row.executable }}</small>{% endif %}</td>
+  <td>{{ row.account }}<small>UID {{ row.uid or 'unknown' }} · session {{ row.session or 'unknown' }}</small></td>
+  <td>{{ row.outcome }}</td>
+</tr>{% else %}<tr><td colspan="5" class="empty">No activity in this window.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

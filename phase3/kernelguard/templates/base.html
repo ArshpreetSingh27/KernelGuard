@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KernelGuard · Activity monitor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('dashboard') }}"><span class="brand-mark" aria-hidden="true">K</span><span>KernelGuard<small>LINUX ACTIVITY MONITORING</small></span></a>
+    <div class="nav-caption">WORKSPACE</div>
+    <nav aria-label="Primary navigation">
+      <a href="{{ url_for('dashboard') }}" {% if request.path == '/' %}aria-current="page"{% endif %}>Overview & activity</a>
+      <a href="{{ url_for('dashboard') }}#alerts">Security alerts</a>
+      <a href="{{ url_for('dashboard') }}#activity">Event explorer</a>
+      <a href="{{ url_for('inventory.index') }}" {% if request.path.startswith('/inventory') or request.path.startswith('/devices') %}aria-current="page"{% endif %}>Host inventory</a>
+      <a href="{{ url_for('dashboard') }}#policy">Detection policy</a>
+    </nav>
+    <div class="sidebar-bottom">
+      {% if administrator %}<form method="post" action="{{ url_for('logout') }}" class="logout-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>Sign out · {{ administrator.username }}</button></form>
+      {% elif not auth_enabled %}<span class="preview-label">READ-ONLY PREVIEW</span>{% endif %}
+      <p>Observe · Correlate · Explain</p>
+    </div>
+  </aside>
+  <main id="main-content">{% block content %}{% endblock %}
+    <footer>KernelGuard · Linux security monitoring</footer>
+  </main>
+</body>
+</html>

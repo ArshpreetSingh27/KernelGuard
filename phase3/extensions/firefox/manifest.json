@@ -1,0 +1,10 @@
+{
+  "manifest_version": 2,
+  "name": "KernelGuard Web Activity",
+  "version": "1.0.0",
+  "description": "Send visited web addresses to the local KernelGuard receiver.",
+  "permissions": ["history", "storage", "http://127.0.0.1:5003/*"],
+  "background": {"scripts": ["background.js"]},
+  "options_ui": {"page": "options.html", "open_in_tab": true},
+  "browser_specific_settings": {"gecko": {"id": "web-activity@kernelguard.local"}}
+}

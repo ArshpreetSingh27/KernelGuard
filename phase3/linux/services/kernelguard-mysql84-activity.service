@@ -1,0 +1,22 @@
+[Unit]
+Description=KernelGuard MySQL 8.4 browser and mail activity receiver
+Requires=docker.service
+After=docker.service network.target
+
+[Service]
+Type=simple
+User=kali
+Group=kali
+WorkingDirectory=/home/kali/Desktop/KernalGuard
+EnvironmentFile=/etc/kernelguard/mysql84/collector.env
+EnvironmentFile=/etc/kernelguard/mysql84/activity.env
+ExecStart=/home/kali/Desktop/KernalGuard/.venv-linux/bin/python -m kernelguard --config /home/kali/Desktop/KernalGuard/config.example.json activity-serve --port 5003
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

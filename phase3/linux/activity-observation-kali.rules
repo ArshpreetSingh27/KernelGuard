@@ -1,0 +1,14 @@
+# Optional high-volume observation rules for the Kali lab.
+# Verify that every directory exists and adjust paths before installing.
+# These record metadata for file opens and process launches by logged-in users.
+# Keep kernelguard.rules and privileged-execution.rules installed separately.
+-a always,exit -F arch=b64 -S execve,execveat -F auid>=1000 -F auid!=unset -F key=kernelguard_process_exec
+-a always,exit -F arch=b32 -S execve,execveat -F auid>=1000 -F auid!=unset -F key=kernelguard_process_exec
+-a always,exit -F arch=b64 -S open,openat,openat2,creat -F dir=/home/kali -F auid>=1000 -F auid!=unset -F key=kernelguard_file_access
+-a always,exit -F arch=b32 -S open,openat,openat2,creat -F dir=/home/kali -F auid>=1000 -F auid!=unset -F key=kernelguard_file_access
+-a always,exit -F arch=b64 -S open,openat,openat2,creat -F dir=/run/media/kali/Acer -F auid>=1000 -F auid!=unset -F key=kernelguard_file_access
+-a always,exit -F arch=b32 -S open,openat,openat2,creat -F dir=/run/media/kali/Acer -F auid>=1000 -F auid!=unset -F key=kernelguard_file_access
+-a always,exit -F arch=b64 -S open,openat,openat2,creat -F dir=/media -F auid>=1000 -F auid!=unset -F key=kernelguard_file_access
+-a always,exit -F arch=b32 -S open,openat,openat2,creat -F dir=/media -F auid>=1000 -F auid!=unset -F key=kernelguard_file_access
+-a always,exit -F arch=b64 -S open,openat,openat2,creat -F dir=/mnt -F auid>=1000 -F auid!=unset -F key=kernelguard_file_access
+-a always,exit -F arch=b32 -S open,openat,openat2,creat -F dir=/mnt -F auid>=1000 -F auid!=unset -F key=kernelguard_file_access

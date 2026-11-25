@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% block head %}<script defer src="{{ url_for('refresh_script') }}"></script>{% endblock %}
+{% block content %}
+<header class="overview-header">
+  <div>
+    <div class="eyebrow">KERNELGUARD / OPERATIONS</div>
+    <h1>Security overview</h1>
+    <p>Linux activity, alerts and investigations.</p>
+  </div>
+  <div class="header-actions">
+    <span class="refresh-note">Refreshes every 15 seconds</span>
+    <a class="button button-secondary" href="{{ request.full_path }}">Refresh now</a>
+  </div>
+</header>
+
+<section class="source-banner" aria-label="Data context">
+  <div class="source-banner-main">
+    <span class="source-mark" aria-hidden="true"></span>
+    <div><strong>{{ 'Demo and collected evidence' if demo_count else 'Collected evidence' }}</strong>
+      <p>{% if demo_count %}{{ demo_count }} synthetic demo events · Source labels identify each record.{% else %}No synthetic demo events stored.{% endif %}</p></div>
+  </div>
+  <span class="source-tag">{{ backend|upper }} · IST</span>
+</section>
+
+<section class="metric-grid" aria-label="Stored activity summary">
+  <article class="metric-card metric-card-primary"><span class="metric-label">Stored events</span><strong>{{ total }}</strong><small>All sources · all time</small></article>
+  <article class="metric-card"><span class="metric-label">Open alerts · all sources</span><strong>{{ open_alert_count }}</strong><small>{{ live_alert_count }} recorded live · {{ demo_alert_count }} demo</small></article>
+  <article class="metric-card"><span class="metric-label">File events</span><strong>{{ file_count }}</strong><small>Observed access</small></article>
+  <article class="metric-card"><span class="metric-label">Process launches</span><strong>{{ process_count }}</strong><small>Audited starts</small></article>
+  <article class="metric-card"><span class="metric-label">Web and mail</span><strong>{{ app_count }}</strong><small>Extension reports</small><a class="metric-link" href="{{ url_for('dashboard', kind='app_activity') }}#activity">View records →</a></article>
+</section>
+
+<section class="operations-grid" aria-label="Alerts and collection status">
+  <article class="panel alerts-panel" id="alerts">
+    <div class="panel-heading"><div><span class="eyebrow">INVESTIGATION QUEUE</span><h2>Security alerts</h2></div><span class="panel-meta">Latest 30</span></div>
+    <nav class="alert-filters" aria-label="Alert source">
+      <a href="{{ url_for('dashboard') }}#alerts" {% if alert_filter == 'all' %}aria-current="page"{% endif %}>All <span>{{ alert_count }}</span></a>
+      <a href="{{ url_for('dashboard', alert_source='live') }}#alerts" {% if alert_filter == 'live' %}aria-current="page"{% endif %}>Recorded live <span>{{ live_alert_count }}</span></a>
+      <a href="{{ url_for('dashboard', alert_source='demo') }}#alerts" {% if alert_filter == 'demo' %}aria-current="page"{% endif %}>Demo <span>{{ demo_alert_count }}</span></a>
+    </nav>
+    <div class="alert-list">
+      {% for alert in alerts %}
+      <a class="alert-row" href="{{ url_for('detail', alert_id=alert.id) }}">
+        <span class="severity {{ 'severity-high' if alert.score >= 70 else 'severity-medium' }}">{{ 'High' if alert.score >= 70 else 'Medium' }}</span>
+        <span class="alert-copy"><span class="alert-title"><strong>{{ alert.rule }}</strong><span class="alert-origin alert-origin-{{ alert.first_origin if alert.first_origin == alert.last_origin and alert.first_origin in ('live', 'demo') else 'other' }}">{{ 'Recorded live' if alert.first_origin == alert.last_origin == 'live' else 'Synthetic demo' if alert.first_origin == alert.last_origin == 'demo' else 'Mixed or missing source' }}</span></span><small>{{ alert.reason }}</small></span>
+        <span class="alert-end"><span class="review-status">{{ 'Acknowledged' if reviews.get(alert.id) == 'acknowledge' else 'Open' }}</span><time>{{ alert.timestamp|utc }}</time></span>
+      </a>
+      {% else %}<p class="empty">No {{ alert_filter if alert_filter != 'all' else '' }} alerts in this view.</p>{% endfor %}
+    </div>
+  </article>
+  <article class="panel collector-panel">
+    <div class="panel-heading"><div><span class="eyebrow">COLLECTION</span><h2>Audit collector</h2></div></div>
+    <div class="collector-state {{ 'collector-active' if healthy else 'collector-idle' }}"><span class="status-dot" aria-hidden="true"></span>{{ 'Active' if healthy else 'Not live' }}</div>
+    <p class="collector-note">Linux Audit · Last successful batch</p>
+    <dl class="collector-facts">
+      <div><dt>Last successful batch</dt><dd>{% if health %}{{ health.last_poll|utc }}{% else %}No successful Linux poll recorded{% endif %}</dd></div>
+      <div><dt>Latest stored event</dt><dd>{% if latest_event_ts %}{{ latest_event_ts|utc }}{% else %}No activity stored{% endif %}</dd></div>
+      <div><dt>Storage</dt><dd>{{ backend|upper }}</dd></div>
+    </dl>
+    <a class="text-link" href="{{ url_for('inventory.index') }}">Inspect host inventory <span aria-hidden="true">→</span></a>
+  </article>
+</section>
+
+<section class="recent-section" aria-label="Recent observations">
+  <div class="section-title"><div><span class="eyebrow">EVIDENCE STREAMS</span><h2>Recent observations</h2></div><span></span></div>
+  <div class="recent-grid">
+    <article class="panel feed-panel"><div class="panel-heading"><h3>Web and sent mail</h3><a href="{{ url_for('dashboard', kind='app_activity') }}#activity">All web &amp; mail →</a></div>
+      <div class="activity-list">{% for row in recent_apps %}<a class="activity-item" href="{{ url_for('investigate', event_id=row.id) }}"><span class="activity-icon app-icon">{{ 'W' if row.kind == 'web_visit' else 'M' }}</span><span class="activity-copy"><strong>{{ row.resource }}</strong><small>{{ 'Web visit' if row.kind == 'web_visit' else 'Sent mail' }} · {{ row.account|replace('app:', '') }} · {{ row.timestamp|utc }} · {{ 'Demo' if row.origin == 'demo' else 'Reported live' }}</small></span></a>{% else %}<p class="empty">No browser or sent mail activity recorded yet.</p>{% endfor %}</div>
+      <nav class="feed-links" aria-label="Browse application activity"><a href="{{ url_for('dashboard', kind='web_visit') }}#activity">Web visits</a><a href="{{ url_for('dashboard', kind='email_sent') }}#activity">Sent mail</a></nav>
+    </article>
+    <article class="panel feed-panel"><div class="panel-heading"><h3>Protected file activity</h3><a href="{{ url_for('dashboard', kind='file_access', resource=cfg.protected_path) }}#activity">All protected files →</a></div>
+      <div class="activity-list">{% for row in recent_files %}<a class="activity-item" href="{{ url_for('investigate', event_id=row.id) }}"><span class="activity-icon file-icon">F</span><span class="activity-copy"><strong>{{ row.resource or 'Unknown file' }}</strong><small>{{ row.account }} · {{ row.timestamp|utc }}</small></span></a>{% else %}<p class="empty">No file activity recorded yet.</p>{% endfor %}</div>
+    </article>
+    <article class="panel feed-panel"><div class="panel-heading"><h3>Audited program launches</h3><a href="{{ url_for('dashboard', kind='process_exec') }}#activity">All launches →</a></div>
+      <div class="activity-list">{% for row in recent_processes %}<a class="activity-item" href="{{ url_for('investigate', event_id=row.id) }}"><span class="activity-icon process-icon">P</span><span class="activity-copy"><strong>{{ row.resource or 'Unknown program' }}</strong><small>{{ row.account }} · {{ row.timestamp|utc }}</small></span></a>{% else %}<p class="empty">No program launches recorded. <a href="{{ url_for('inventory.index', kind='processes') }}">View observed process inventory</a>.</p>{% endfor %}</div>
+    </article>
+  </div>
+</section>
+
+<section id="activity" class="timeline-section">
+  <div class="section-title"><div><span class="eyebrow">EVENT EXPLORER</span><h2>Activity timeline</h2></div><span>Latest 100 matching events · IST</span></div>
+  <form class="filter-bar" method="get" action="/#activity">
+    <label>Event type<select name="kind"><option value="">All events</option><option value="app_activity" {% if kind == 'app_activity' %}selected{% endif %}>Web and sent mail</option><option value="file_access" {% if kind == 'file_access' %}selected{% endif %}>File access</option><option value="process_exec" {% if kind == 'process_exec' %}selected{% endif %}>Process launch</option><option value="web_visit" {% if kind == 'web_visit' %}selected{% endif %}>Web visit</option><option value="email_sent" {% if kind == 'email_sent' %}selected{% endif %}>Email sent</option><option value="login_failure" {% if kind == 'login_failure' %}selected{% endif %}>Login failure</option><option value="privileged_exec" {% if kind == 'privileged_exec' %}selected{% endif %}>Privileged execution</option><option value="usb_seen" {% if kind == 'usb_seen' %}selected{% endif %}>USB observed</option><option value="usb_absent" {% if kind == 'usb_absent' %}selected{% endif %}>USB absent</option></select></label>
+    <label>Resource contains<input name="resource" value="{{ resource }}" placeholder="Domain or path"></label>
+    <label>Account (exact)<input name="account" value="{{ account }}" placeholder="e.g. app:firefox"></label>
+    <button>Apply filters</button><a class="clear-link" href="/#activity">Clear</a>
+  </form>
+  {% include 'events.html' %}
+</section>
+
+<details id="policy" class="policy policy-details"><summary>View active detection policy</summary>
+  <div class="policy-content"><p><b>Login failures:</b> {{ cfg.login_threshold }} failed authentications within {{ cfg.login_window_seconds }} seconds.</p>
+  <p><b>Protected access:</b> successful access under <code>{{ cfg.protected_path }}</code> outside {{ '%02d'|format(cfg.allowed_start_hour) }}:00–{{ '%02d'|format(cfg.allowed_end_hour) }}:00 ({{ cfg.timezone }}).</p>
+  <p><b>Bulk activity:</b> {{ cfg.bulk_file_threshold }} distinct protected paths in {{ cfg.bulk_window_seconds }} seconds within the same user/session.</p>
+  <p><b>Privileged commands:</b> selected executables running with effective UID 0 from a non-root login identity: {{ cfg.privileged_executables|join(', ') }}.</p>
+  <p><b>USB policy:</b> alert on first observation or reappearance of an unenrolled USB identity. Review <a href="{{ url_for('inventory.index') }}">device enrollment</a>.</p>
+  <p><b>Web and mail:</b> HTTP visits {% if cfg.alert_insecure_http %}alert{% else %}do not alert{% endif %}; risky domains: {{ cfg.risky_web_domains|join(', ') or 'none configured' }}; trusted mail domains: {{ cfg.trusted_email_domains|join(', ') or 'none configured' }}.</p>
+  </div>
+</details>
+{% endblock %}
